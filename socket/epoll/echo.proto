@@ -1,0 +1,41 @@
+syntax = "proto3";
+
+package Protobuf;
+
+option cc_generic_services = true;
+
+message Client
+{
+    string client_id = 1;
+    int32 data = 2;
+}
+
+message Server
+{
+    int32 server_id = 1;
+    int32 data = 2;
+}
+
+message ResultCode
+{
+    int32 errcode = 1; 
+    bytes errmsg = 2;
+}
+
+message LoginRequest
+{
+    bytes name = 1;
+    bytes pwd = 2;
+}
+
+message LoginResponse
+{
+    ResultCode result = 1;
+    bool sucess = 2;
+}
+
+service UserServiceRpc
+{
+// 这里实际上不需要和提供的本地的函数的名称相同，但是最好一样
+    rpc Login(LoginRequest) returns(LoginResponse);
+}
