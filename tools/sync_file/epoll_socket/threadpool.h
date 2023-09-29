@@ -3,8 +3,8 @@
 */
 
 #pragma once
-#ifndef THREAD_POOL_H
-#define THREAD_POOL_H
+#ifndef ___THREAD_POOL_HEADER_H___
+#define ___THREAD_POOL_HEADER_H___
 // 使用#pragma once  和 #ifndef THREAD_POOL_H 是为了避免同一个文件被include多次
 #include <vector>
 #include <map>

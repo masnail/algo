@@ -12,7 +12,7 @@
 #include <iostream>
 #include <string>
 
-#include "../../include/threadpool.h"
+#include "ThreadPool.h"
 
 #include "echo.pb.h"
 
@@ -42,7 +42,7 @@ private:
     int event_cnt;
 
     //线程池
-    threadpool pool;
+    ThreadPool pool;
 
 public:
     ServerImpl(int server_port, string server_ip);
@@ -135,7 +135,7 @@ void ServerImpl::ExecEpoll()
                 //         pool.delCloseFD(socket_fd);
                 //         cout << "closed client:" << socket_fd << endl;
                 //     } else {
-                //         pool.commit(socket_fd, [buf, socket_fd, epfd, &event, str_len]()
+                //         pool.AddTask(socket_fd, [buf, socket_fd, epfd, &event, str_len]()
                 //         {
 
                 //             cout << "server id >>>>[" << socket_fd << "] recv:" << char(buf[0]+'A') << ":" << buf[1]<< endl;
@@ -167,7 +167,7 @@ bool ServerImpl::RecvBuff(int socket_fd)
     else
     {
         client.ParseFromArray(buf, str_len);
-        pool.commit(socket_fd, [&, client, socket_fd, str_len]() {
+        pool.AddTask(socket_fd, [&, client, socket_fd, str_len]() {
             SendBuff(socket_fd, client.data());
         });
     }
