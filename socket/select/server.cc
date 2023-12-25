@@ -75,6 +75,8 @@ void sendMess() {
 int main() {
     //new socket
     s = socket(AF_INET, SOCK_STREAM, 0);
+    int opt_on = 1;
+    setsockopt(s, SOL_SOCKET, SO_REUSEADDR, &opt_on, sizeof(opt_on));
     memset(&servaddr, 0, sizeof(servaddr));
     servaddr.sin_family = AF_INET;
     servaddr.sin_port = htons(PORT);

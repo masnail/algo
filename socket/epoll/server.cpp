@@ -12,7 +12,7 @@
 #include <iostream>
 #include <string>
 
-#include "ThreadPool.h"
+#include "threadpool.h"
 
 #include "echo.pb.h"
 
@@ -67,6 +67,10 @@ ServerImpl::~ServerImpl()
 bool ServerImpl::InitServer(int pool_size)
 {
     serv_sock = socket(PF_INET, SOCK_STREAM, 0);
+
+    int opt_on = 1;
+    setsockopt(serv_sock, SOL_SOCKET, SO_REUSEADDR, &opt_on, sizeof(opt_on));
+
     bzero(&serv_adr, sizeof(serv_adr));
     serv_adr.sin_family = AF_INET;
     serv_adr.sin_addr.s_addr = htonl(INADDR_ANY);
