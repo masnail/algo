@@ -122,7 +122,7 @@ void TimerQueue::CancelInLoop(int64_t timerId)
 std::vector<TimerQueue::Entry> TimerQueue::GetExpired(TimerStamp NowTime)
 {
     Entry sentry(NowTime, reinterpret_cast<Timer*>(UINTPTR_MAX));
-    auto end = timers_.lower_bound(sentry);    //找到第一个未到期的定时器
+    auto end = timers_.upper_bound(sentry);    //找到第一个未到期的定时器
 
     std::vector<Entry> expired(timers_.begin(), end);    //把[timers_.bein(),end)拷贝给expried
     timers_.erase(timers_.begin(), end);    //在timers_容器中删除
