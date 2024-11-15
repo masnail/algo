@@ -13,6 +13,7 @@
 #include <functional>
 #include <stdexcept>
 #include <list>
+#include <ctime>
 
 using namespace std;
 
@@ -37,9 +38,12 @@ private:
     condition_variable task_cv_;                                           // 条件阻塞
     atomic<bool> run_{true};                                               // 线程池是否执行
     atomic<int> idlThrNum_{0};                                             // 空闲线程数量
+    std::unordered_set<int> used_cpus;                                     // 记录已经绑定CPU的号
 
 public:
-    ThreadPool() {}
+    ThreadPool() {
+        srand(time(NULL));
+    }
 
     static ThreadPool* GetInstance() {
         static ThreadPool thread_pool_single;
@@ -61,6 +65,63 @@ private:
     // inline ThreadPool(unsigned short size = 4) { addThread(size); }
     ~ThreadPool() = default;
     ThreadPool& operator=(const ThreadPool&) = delete;
+
+private:
+    // Function to randomly bind the thread to a CPU core, ensuring no duplication
+    void SetRandomAffinity() {
+        int num_cpus = std::thread::hardware_concurrency();  // Get the number of CPU cores
+        if (num_cpus == 0) {
+            DEBUG_ERROR("Error: Unable to determine the number of CPUs");
+            return;
+        }
+
+        // Find a random CPU that is not used
+        int cpu = rand() % num_cpus;
+        while (used_cpus.find(cpu) != used_cpus.end() && used_cpus.size() < num_cpus) {
+            cpu = rand() % num_cpus;  // Retry if the CPU is already used
+        }
+
+        // Set CPU affinity to bind the thread to the chosen CPU
+        cpu_set_t cpu_set;
+        CPU_ZERO(&cpu_set);
+        CPU_SET(cpu, &cpu_set);
+
+        if (sched_setaffinity(0, sizeof(cpu_set), &cpu_set) == -1) {
+            DEBUG_ERROR("Error: Failed to set CPU affinity for thread");
+        } else {
+            DEBUG_INFO("Thread bound to CPU core:%d.", cpu);
+            used_cpus.insert(cpu);
+            if (used_cpus.size() == num_cpus) used_cpus.clear();
+        }
+    }
+private:
+    // Function to randomly bind the thread to a CPU core, ensuring no duplication
+    void SetRandomAffinity() {
+        int num_cpus = std::thread::hardware_concurrency();  // Get the number of CPU cores
+        if (num_cpus == 0) {
+            DEBUG_ERROR("Error: Unable to determine the number of CPUs");
+            return;
+        }
+
+        // Find a random CPU that is not used
+        int cpu = rand() % num_cpus;
+        while (used_cpus.find(cpu) != used_cpus.end() && used_cpus.size() < num_cpus) {
+            cpu = rand() % num_cpus;  // Retry if the CPU is already used
+        }
+
+        // Set CPU affinity to bind the thread to the chosen CPU
+        cpu_set_t cpu_set;
+        CPU_ZERO(&cpu_set);
+        CPU_SET(cpu, &cpu_set);
+
+        if (sched_setaffinity(0, sizeof(cpu_set), &cpu_set) == -1) {
+            DEBUG_ERROR("Error: Failed to set CPU affinity for thread");
+        } else {
+            DEBUG_INFO("Thread bound to CPU core:%d.", cpu);
+            used_cpus.insert(cpu);
+            if (used_cpus.size() == num_cpus) used_cpus.clear();
+        }
+    }
 
 public:
     // 提交一个任务
@@ -107,6 +168,7 @@ public:
         for (; pool_.size() < THREADPOOL_MAX_NUM && size > 0; --size)
         {                                      // 增加线程数量,但不超过 预定义数量 THREADPOOL_MAX_NUM
             pool_.emplace_back([this, size] { // 工作线程函数
+                SetRandomAffinity();
                 while (run_)
                 {
                     Task task; // 获取一个待执行的 task
